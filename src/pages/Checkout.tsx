@@ -447,6 +447,23 @@ const Checkout = () => {
         throw new Error('Missing customer information - form data not validated');
       }
       
+      // Build add-ons array based on selections
+      const addOns = [];
+      if (usbDrives > 0) {
+        addOns.push('usb-drive');
+      }
+      if (cloudBackup > 0) {
+        addOns.push('online-gallery');
+      }
+      if (digitizingSpeed === 'expedited') {
+        addOns.push('expedited-processing');
+      } else if (digitizingSpeed === 'rush') {
+        addOns.push('rush-processing');
+      }
+
+      // Map package type to expected format
+      const mappedPackageType = packageType.toLowerCase().replace(' ', '-');
+
       const response = await fetch('/api/process-payment', {
         method: 'POST',
         headers: {
@@ -456,11 +473,23 @@ const Checkout = () => {
           token,
           amount: parseFloat(calculateTotal()),
           orderDetails: {
-            package: packageType,
-            usbDrives,
-            cloudBackup,
-            digitizingSpeed,
-            customerInfo: validatedFormData
+            packageType: mappedPackageType,
+            addOns: addOns,
+            customerInfo: {
+              firstName: validatedFormData.firstName,
+              lastName: validatedFormData.lastName,
+              email: validatedFormData.email,
+              phone: validatedFormData.phone,
+              address: {
+                address_line_1: validatedFormData.address,
+                locality: validatedFormData.city,
+                administrative_district_level_1: validatedFormData.state,
+                postal_code: validatedFormData.zipCode,
+                country: 'US'
+              }
+            },
+            discountCode: appliedCoupon,
+            discountAmount: couponDiscount > 0 ? calculateSubtotal() * (couponDiscount / 100) : 0
           }
         }),
       });
