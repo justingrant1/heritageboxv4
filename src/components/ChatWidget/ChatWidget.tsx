@@ -137,52 +137,90 @@ What would you like to know?`,
         })
       });
 
-      // Get AI or human response based on current mode
-      const endpoint = session.mode === 'ai' ? '/api/chat-ai' : '/api/chat-slack';
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: session.sessionId,
-          message: content,
-          conversationHistory: updatedMessages
-        })
-      });
+      if (session.mode === 'ai') {
+        // AI mode - get AI response
+        const response = await fetch('/api/chat-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: session.sessionId,
+            message: content,
+            conversationHistory: updatedMessages
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response');
+        if (!response.ok) {
+          throw new Error('Failed to get AI response');
+        }
+
+        const data = await response.json();
+        
+        const botMessage: Message = {
+          id: uuidv4(),
+          content: data.response,
+          sender: 'bot',
+          timestamp: new Date()
+        };
+
+        const finalMessages = [...updatedMessages, botMessage];
+        
+        // Update session with bot response
+        setSession({ 
+          ...session, 
+          messages: finalMessages
+        });
+
+        // Update Airtable with bot response
+        await fetch('/api/chat-session', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'addMessage',
+            sessionId: session.sessionId,
+            message: botMessage
+          })
+        });
+      } else {
+        // Human mode - send message to Slack
+        if (!session.slackThreadId) {
+          throw new Error('No Slack thread ID available');
+        }
+
+        const response = await fetch('/api/chat-slack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'sendMessage',
+            sessionId: session.sessionId,
+            message: content,
+            threadId: session.slackThreadId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send message to Slack');
+        }
+
+        // Don't add a bot response immediately in human mode
+        // The response will come from Slack via polling
+        // Just update the session state
+        setSession({ 
+          ...session, 
+          messages: updatedMessages
+        });
+
+        // Update Airtable with user message
+        await fetch('/api/chat-session', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'addMessage',
+            sessionId: session.sessionId,
+            message: userMessage,
+            slackThreadId: session.slackThreadId
+          })
+        });
       }
-
-      const data = await response.json();
-      
-      const botMessage: Message = {
-        id: uuidv4(),
-        content: data.response,
-        sender: session.mode === 'ai' ? 'bot' : 'human',
-        timestamp: new Date()
-      };
-
-      const finalMessages = [...updatedMessages, botMessage];
-      
-      // Update session with bot response
-      setSession({ 
-        ...session, 
-        messages: finalMessages,
-        slackThreadId: data.slackThreadId || session.slackThreadId
-      });
-
-      // Update Airtable with bot response
-      await fetch('/api/chat-session', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'addMessage',
-          sessionId: session.sessionId,
-          message: botMessage,
-          slackThreadId: data.slackThreadId
-        })
-      });
 
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -207,8 +245,6 @@ What would you like to know?`,
   const switchToHuman = async () => {
     if (!session) return;
 
-    setSession({ ...session, mode: 'human' });
-
     // Send transition message
     const transitionMessage: Message = {
       id: uuidv4(),
@@ -221,18 +257,77 @@ What would you like to know?`,
     setSession({ ...session, messages: updatedMessages, mode: 'human' });
 
     try {
-      // Notify backend about mode switch
-      await fetch('/api/chat-slack', {
+      // Create Slack thread with conversation summary
+      const conversationSummary = updatedMessages
+        .filter(msg => msg.sender === 'user')
+        .map(msg => msg.content)
+        .join('\n\n');
+
+      const response = await fetch('/api/chat-slack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'createThread',
           sessionId: session.sessionId,
-          action: 'initiate',
-          conversationHistory: updatedMessages
+          message: conversationSummary || 'Customer requesting human assistance'
         })
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to create Slack thread');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.threadId) {
+        // Update session with Slack thread ID
+        setSession(prev => prev ? {
+          ...prev,
+          slackThreadId: data.threadId,
+          mode: 'human'
+        } : null);
+
+        // Update Airtable with thread ID
+        await fetch('/api/chat-session', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'addMessage',
+            sessionId: session.sessionId,
+            message: transitionMessage,
+            slackThreadId: data.threadId
+          })
+        });
+
+        // Send confirmation message
+        const confirmMessage: Message = {
+          id: uuidv4(),
+          content: "Connected! Our team will respond shortly. Your conversation is now being handled by a live agent.",
+          sender: 'bot',
+          timestamp: new Date()
+        };
+
+        setSession(prev => prev ? {
+          ...prev,
+          messages: [...prev.messages, confirmMessage]
+        } : null);
+      }
     } catch (error) {
       console.error('Failed to switch to human:', error);
+      
+      // Add error message
+      const errorMessage: Message = {
+        id: uuidv4(),
+        content: "Sorry, I couldn't connect you to an agent right now. Please try again or contact us directly.",
+        sender: 'bot',
+        timestamp: new Date()
+      };
+
+      setSession(prev => prev ? {
+        ...prev,
+        messages: [...prev.messages, errorMessage],
+        mode: 'ai' // Switch back to AI mode on error
+      } : null);
     }
   };
 
