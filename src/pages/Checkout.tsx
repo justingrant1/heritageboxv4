@@ -481,7 +481,8 @@ const Checkout = () => {
               }
             },
             discountCode: appliedCoupon,
-            discountAmount: couponDiscount > 0 ? calculateSubtotal() * (couponDiscount / 100) : 0
+            discountAmount: couponDiscount > 0 ? calculateSubtotal() * (couponDiscount / 100) : 0,
+            totalAmount: parseFloat(calculateTotal())
           }
         }),
       });
