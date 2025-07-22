@@ -8,7 +8,7 @@ import {
     createSquareLineItems, 
     formatCustomerData, 
     calculateProcessingTime 
-} from '../src/utils/squareUtils.ts';
+} from '../src/utils/squareUtils';
 
 // Helper function for structured logging
 function logEvent(event: string, data: any) {
