@@ -16,7 +16,6 @@ import SquarePayment from '@/components/SquarePayment';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { sendEmailToHeritageBox, generateOrderId } from '@/utils/emailUtils';
 import { sendOrderToAirtable, parseAddOnDetails, parseSpeedDetails } from '@/utils/airtableUtils';
-import { generateSequentialOrderNumber } from '@/utils/orderUtils';
 import { 
   Form,
   FormControl,
@@ -178,6 +177,15 @@ const Checkout = () => {
   const USB_DRIVE_PRICE = 24.95;
   const CLOUD_BACKUP_PRICE = 0; // Updated price to zero
 
+  // Function to generate sequential order number (same as OrderConfirmation)
+  const generateOrderNumber = () => {
+    const baseNumber = 13405;
+    const storedCount = localStorage.getItem('hb_order_count');
+    const currentCount = storedCount ? parseInt(storedCount) : 0;
+    const newCount = currentCount + 1;
+    localStorage.setItem('hb_order_count', newCount.toString());
+    return `HB${(baseNumber + newCount - 1).toString().padStart(5, '0')}`;
+  };
 
   // Get selected digitizing option
   const getSelectedDigitizingOption = () => {
@@ -497,8 +505,8 @@ const Checkout = () => {
       // Prepare order data for both email and Airtable
       const selectedDigitizingOption = getSelectedDigitizingOption();
       
-      // Generate unique order ID ONCE using the new sequential format
-      const orderId = generateSequentialOrderNumber();
+      // Generate unique order ID ONCE using the same format as OrderConfirmation
+      const orderId = generateOrderNumber();
       console.log('💳 PAYMENT SUCCESS - Generated single Order ID:', orderId);
       
       // Create add-ons array for legacy support
@@ -636,8 +644,8 @@ const Checkout = () => {
       // Prepare order data for both email and Airtable
       const selectedDigitizingOption = getSelectedDigitizingOption();
       
-      // Generate unique order ID ONCE using the new sequential format
-      const orderId = generateSequentialOrderNumber();
+      // Generate unique order ID ONCE using the same format as OrderConfirmation
+      const orderId = generateOrderNumber();
       console.log('💰 PAYPAL - Generated single Order ID:', orderId);
       
       // Create add-ons array for legacy support
