@@ -23,7 +23,7 @@ interface ChatTranscriptRecord {
 async function callAirtableAPI(operation: string, params: any) {
   const baseUrl = process.env.VERCEL_URL 
     ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:5173';
+    : 'http://localhost:8081';
     
   const response = await fetch(`${baseUrl}/api/airtable-operations`, {
     method: 'POST',
