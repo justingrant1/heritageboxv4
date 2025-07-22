@@ -83,29 +83,24 @@ declare global {
 
 // Environment-aware configuration
 const getSquareConfig = () => {
-  // Use window global instead of import.meta.env for better compatibility
-  const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
-
-  let appId;
-  let locationId;
-
-  // Try to get from env variables, fallback to sandbox values for development
-  if (typeof window !== 'undefined') {
-    // In production, these should be set via build process
-    appId = (window as any).__SQUARE_APP_ID__ || 'sq0idp-1Zchx5RshtaZ74spcf2w0A';
-    locationId = (window as any).__SQUARE_LOCATION_ID__ || 'LPFZYDYB5G5GM';
-  } else {
-    // Fallback values
-    appId = 'sq0idp-1Zchx5RshtaZ74spcf2w0A';
-    locationId = 'LPFZYDYB5G5GM';
-  }
+  // Read from Vite environment variables
+  const appId = import.meta.env.VITE_SQUARE_APP_ID;
+  const locationId = import.meta.env.VITE_SQUARE_LOCATION_ID;
+  const environment = import.meta.env.VITE_SQUARE_ENVIRONMENT || 'sandbox';
+  
+  console.log('Environment variables:', {
+    appId,
+    locationId,
+    environment,
+    allEnvVars: import.meta.env
+  });
 
   if (!appId || !locationId) {
-    console.error("Square configuration is missing.");
+    console.error("Square configuration is missing. Required: VITE_SQUARE_APP_ID and VITE_SQUARE_LOCATION_ID");
     return { appId: '', locationId: '', jsUrl: 'https://web.squarecdn.com/v1/square.js' };
   }
   
-  console.log('Square Config:', { appId, locationId, isProduction });
+  console.log('Square Config:', { appId, locationId, environment });
   
   return {
     appId,
