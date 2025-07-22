@@ -11,12 +11,19 @@ interface SlackMessage {
   icon_emoji?: string;
 }
 
-async function sendSlackMessage(message: SlackMessage): Promise<any> {
-  console.log('Sending Slack message:', { 
-    channel: message.channel, 
-    text: message.text.substring(0, 50) + '...',
-    thread_ts: message.thread_ts 
-  });
+// Ultra-simple Slack API test - no complexity, no formatting
+async function testSlackConnection(message: string): Promise<any> {
+  console.log('=== TESTING SLACK API ===');
+  console.log('Token exists:', !!SLACK_BOT_TOKEN);
+  console.log('Channel:', VIP_SALES_CHANNEL);
+  console.log('Message:', message);
+
+  const payload = {
+    channel: VIP_SALES_CHANNEL,
+    text: message
+  };
+  
+  console.log('Payload:', JSON.stringify(payload));
 
   const response = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
@@ -24,60 +31,60 @@ async function sendSlackMessage(message: SlackMessage): Promise<any> {
       'Authorization': `Bearer ${SLACK_BOT_TOKEN}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      channel: message.channel,
-      text: message.text,
-      thread_ts: message.thread_ts,
-      username: message.username || 'Heritagebox Chat',
-      icon_emoji: message.icon_emoji || ':speech_balloon:'
-    })
+    body: JSON.stringify(payload)
   });
 
-  // Slack API always returns 200, even for errors - check the JSON response
-  const result = await response.json();
-  console.log('Slack API response:', result);
+  console.log('Response status:', response.status);
+  console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
-  if (!result.ok) {
-    console.error('Slack API error:', result.error);
-    throw new Error(`Slack API error: ${result.error}`);
-  }
+  const result = await response.json();
+  console.log('=== FULL SLACK RESPONSE ===');
+  console.log(JSON.stringify(result, null, 2));
 
   return result;
 }
 
 async function createSlackThread(customerMessage: string, sessionId: string): Promise<string> {
-  const initialMessage = `🆕 **New Chat Session Started**
-**Session ID:** ${sessionId}
-**Customer Message:** "${customerMessage}"
-**Status:** Customer requesting human assistance
+  // Super simple message - no formatting at all
+  const simpleMessage = `New customer chat - Session ${sessionId}: ${customerMessage}`;
+  
+  const result = await testSlackConnection(simpleMessage);
+  
+  if (!result.ok) {
+    console.error('Slack API failed:', result);
+    throw new Error(`Slack error: ${result.error || 'Unknown error'}`);
+  }
 
-_Reply in this thread to chat with the customer. Messages will be sent back to the chat widget in real-time._`;
-
-  const result = await sendSlackMessage({
-    text: initialMessage,
-    channel: VIP_SALES_CHANNEL,
-    username: 'Heritagebox Chat Bot',
-    icon_emoji: ':robot_face:'
-  });
-
-  return result.ts; // Thread timestamp
+  return result.ts || 'no-thread-id';
 }
 
 async function sendMessageToSlack(message: string, threadId: string, fromCustomer: boolean = true): Promise<void> {
-  const username = fromCustomer ? 'Customer' : 'Heritagebox Agent';
-  const icon = fromCustomer ? ':bust_in_silhouette:' : ':technologist:';
+  // Ultra simple message with no formatting
+  const simpleMessage = fromCustomer ? `Customer: ${message}` : `Agent: ${message}`;
   
-  const slackMessage = fromCustomer 
-    ? `**Customer:** ${message}`
-    : `**Agent:** ${message}`;
-
-  await sendSlackMessage({
-    text: slackMessage,
+  const payload = {
     channel: VIP_SALES_CHANNEL,
-    thread_ts: threadId,
-    username,
-    icon_emoji: icon
+    text: simpleMessage,
+    thread_ts: threadId
+  };
+
+  console.log('Sending to thread:', JSON.stringify(payload));
+
+  const response = await fetch('https://slack.com/api/chat.postMessage', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SLACK_BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload)
   });
+
+  const result = await response.json();
+  console.log('Thread message result:', result);
+
+  if (!result.ok) {
+    throw new Error(`Failed to send thread message: ${result.error}`);
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

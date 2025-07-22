@@ -1,8 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { v4 as uuidv4 } from 'uuid';
-
-const AIRTABLE_BASE_ID = 'appFMHAYZrTskpmdX';
-const AIRTABLE_TRANSCRIPTS_TABLE = 'tbl6gHHlvSwx4gQpB';
 
 interface Message {
   id: string;
@@ -11,75 +7,25 @@ interface Message {
   timestamp: Date;
 }
 
-interface ChatTranscriptRecord {
-  SessionID: string;
-  Transcript: string;
-  Status: string;
-  CustomerEmail?: string;
-  SlackThreadID?: string;
-}
-
-// Helper function to call our Airtable operations endpoint
-async function callAirtableAPI(operation: string, params: any) {
-  let baseUrl: string;
-  
-  if (process.env.VERCEL_URL) {
-    // Production Vercel deployment
-    baseUrl = `https://${process.env.VERCEL_URL}`;
-  } else if (process.env.NODE_ENV === 'development') {
-    // Local development
-    baseUrl = 'http://localhost:5173'; // Vite dev server
-  } else {
-    // Fallback - try relative API call
-    baseUrl = '';
-  }
-    
-  const apiUrl = baseUrl ? `${baseUrl}/api/airtable-operations` : '/api/airtable-operations';
-  console.log('Calling Airtable API:', apiUrl, { operation });
-  
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      operation,
-      baseId: AIRTABLE_BASE_ID,
-      tableId: AIRTABLE_TRANSCRIPTS_TABLE,
-      ...params
-    }),
-  });
-
-  console.log('Airtable API response status:', response.status);
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Airtable API error:', errorText);
-    throw new Error(`Airtable operation failed: ${response.status} - ${errorText}`);
-  }
-
-  const result = await response.json();
-  console.log('Airtable API result:', result);
-  
-  if (!result.success) {
-    throw new Error(result.error || 'Airtable operation failed');
-  }
-
-  return result.data;
-}
+// Simplified session storage - just keep it in memory for now
+const sessions = new Map<string, any>();
 
 async function createChatSession(sessionId: string, initialMessage: Message) {
-  const transcript = formatTranscriptEntry(initialMessage);
+  console.log('=== CREATING CHAT SESSION ===');
+  console.log('Session ID:', sessionId);
+  console.log('Initial message:', initialMessage);
   
-  const record = await callAirtableAPI('create_record', {
-    fields: {
-      'SessionID': sessionId,
-      'Transcript': transcript,
-      'Status': 'Active'
-    }
-  });
-
-  return record;
+  // Just store in memory for now - no complex Airtable calls
+  const session = {
+    id: sessionId,
+    messages: [initialMessage],
+    status: 'Active',
+    created: new Date()
+  };
+  
+  sessions.set(sessionId, session);
+  console.log('Session created successfully');
+  return session;
 }
 
 async function updateChatSession(
@@ -87,44 +33,25 @@ async function updateChatSession(
   message: Message, 
   slackThreadId?: string
 ) {
-  // First, search for the existing record
-  const searchResult = await callAirtableAPI('search_records', {
-    filterByFormula: `{SessionID} = "${sessionId}"`
-  });
-
-  if (!searchResult.records || searchResult.records.length === 0) {
-    throw new Error('Chat session not found');
-  }
-
-  const record = searchResult.records[0];
-  const existingTranscript = record.fields.Transcript || '';
-  const newTranscriptEntry = formatTranscriptEntry(message);
-  const updatedTranscript = existingTranscript + '\n' + newTranscriptEntry;
-
-  const updateFields: any = {
-    'Transcript': updatedTranscript
-  };
-
-  if (slackThreadId) {
-    updateFields['SlackThreadID'] = slackThreadId;
-  }
-
-  const updateResult = await callAirtableAPI('update_records', {
-    records: [{
-      id: record.id,
-      fields: updateFields
-    }]
-  });
-
-  return updateResult;
-}
-
-function formatTranscriptEntry(message: Message): string {
-  const timestamp = new Date(message.timestamp).toISOString();
-  const senderLabel = message.sender === 'user' ? 'Customer' : 
-                     message.sender === 'bot' ? 'AI Assistant' : 'Human Agent';
+  console.log('=== UPDATING CHAT SESSION ===');
+  console.log('Session ID:', sessionId);
+  console.log('New message:', message);
+  console.log('Slack thread ID:', slackThreadId);
   
-  return `[${timestamp}] ${senderLabel}: ${message.content}`;
+  const session = sessions.get(sessionId);
+  if (!session) {
+    console.log('Session not found, creating new one');
+    return createChatSession(sessionId, message);
+  }
+  
+  session.messages.push(message);
+  if (slackThreadId) {
+    session.slackThreadId = slackThreadId;
+  }
+  
+  sessions.set(sessionId, session);
+  console.log('Session updated successfully');
+  return session;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
