@@ -2,6 +2,14 @@ export const config = {
     runtime: 'edge',
 };
 
+// Mapping coupon codes to Square discount IDs
+const COUPON_CODE_MAPPING = {
+    '99DOFF': '7RQTL7HC3MC6OPOJXO4QOWHY',
+    '99SOFF': 'YNCJK4BPNMNUUJJT5S2SWYGP',
+    '15OFF': 'O4LYCD2U5MDIG5B6VMNUH6JB',
+    'SAVE15': 'QL2BRYKDUXOOASYR2S6ORYTE'
+};
+
 // Helper function for structured logging
 function logEvent(event: string, data: any) {
     console.log(JSON.stringify({
@@ -82,11 +90,120 @@ export default async function handler(request: Request) {
             });
         }
 
+        // Step 1: Create Order in Square with discounts if applicable
+        let orderId: string | null = null;
+        if (orderDetails && (orderDetails.couponCode || orderDetails.items)) {
+            logEvent('creating_square_order', {
+                couponCode: orderDetails.couponCode,
+                hasItems: !!orderDetails.items
+            });
+
+            const lineItems: any[] = [];
+            
+            // Add line items from orderDetails
+            if (orderDetails.items) {
+                orderDetails.items.forEach((item: any) => {
+                    lineItems.push({
+                        name: item.name,
+                        quantity: String(item.quantity || 1),
+                        base_price_money: {
+                            amount: Math.round((item.price || 0) * 100),
+                            currency: 'USD'
+                        },
+                        note: item.description || ''
+                    });
+                });
+            } else {
+                // Default line item if no specific items provided
+                lineItems.push({
+                    name: 'Heritage Box Service',
+                    quantity: '1',
+                    base_price_money: {
+                        amount: Math.round(amount * 100),
+                        currency: 'USD'
+                    },
+                    note: 'Memory digitization service'
+                });
+            }
+
+            const orderPayload: any = {
+                order: {
+                    location_id: SQUARE_LOCATION_ID,
+                    reference_id: `hb_${Date.now()}`,
+                    line_items: lineItems
+                },
+                idempotency_key: crypto.randomUUID()
+            };
+
+            // Add discount if coupon code is provided
+            if (orderDetails.couponCode) {
+                const couponCode = orderDetails.couponCode.toUpperCase();
+                const discountId = COUPON_CODE_MAPPING[couponCode];
+                
+                if (discountId) {
+                    orderPayload.order.discounts = [{
+                        catalog_object_id: discountId,
+                        name: `Coupon: ${couponCode}`,
+                        scope: 'ORDER'
+                    }];
+                    
+                    logEvent('applying_square_discount', {
+                        couponCode,
+                        discountId
+                    });
+                }
+            }
+
+            const orderResponse = await fetch(`${SQUARE_API_URL}/v2/orders`, {
+                method: 'POST',
+                headers: {
+                    'Square-Version': '2024-02-15',
+                    'Authorization': `Bearer ${squareAccessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderPayload)
+            });
+
+            const orderResult = await orderResponse.json();
+            
+            if (!orderResponse.ok) {
+                logEvent('square_order_error', {
+                    status: orderResponse.status,
+                    errors: orderResult.errors,
+                    fullErrorResponse: orderResult
+                });
+                throw new Error(orderResult.errors?.[0]?.detail || 'Failed to create order in Square');
+            }
+
+            orderId = orderResult.order?.id;
+            logEvent('square_order_created', {
+                orderId,
+                totalMoney: orderResult.order?.total_money
+            });
+        }
+
+        // Step 2: Process payment
         logEvent('square_payment_initiated', {
             amount,
+            orderId,
             locationId: SQUARE_LOCATION_ID,
             environment: process.env.NODE_ENV
         });
+
+        const paymentPayload: any = {
+            source_id: token,
+            amount_money: {
+                amount: Math.round(amount * 100), // Convert to cents
+                currency: 'USD'
+            },
+            location_id: SQUARE_LOCATION_ID,
+            idempotency_key: crypto.randomUUID()
+        };
+
+        // Link payment to order if order was created
+        if (orderId) {
+            paymentPayload.order_id = orderId;
+        }
 
         const response = await fetch(`${SQUARE_API_URL}/v2/payments`, {
             method: 'POST',
@@ -95,15 +212,7 @@ export default async function handler(request: Request) {
                 'Authorization': `Bearer ${squareAccessToken}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                source_id: token,
-                amount_money: {
-                    amount: Math.round(amount * 100), // Convert to cents
-                    currency: 'USD'
-                },
-                location_id: SQUARE_LOCATION_ID,
-                idempotency_key: crypto.randomUUID()
-            })
+            body: JSON.stringify(paymentPayload)
         });
 
         const result = await response.json();
@@ -129,6 +238,7 @@ export default async function handler(request: Request) {
 
         logEvent('payment_successful', {
             paymentId: result.payment?.id,
+            orderId: result.payment?.order_id,
             amount: result.payment?.amount_money?.amount,
             status: result.payment?.status
         });
@@ -141,7 +251,8 @@ export default async function handler(request: Request) {
 
         return new Response(JSON.stringify({
             success: true,
-            payment: result.payment
+            payment: result.payment,
+            orderId: orderId
         }), {
             status: 200,
             headers: {'Content-Type': 'application/json'}
