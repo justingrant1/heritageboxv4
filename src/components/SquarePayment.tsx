@@ -222,34 +222,22 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
 
         console.log("Creating card instance");
         
-        // Card styling to match the mobile design
+        // Card styling with Square SDK supported properties only
         const cardOptions: CardOptions = {
           style: {
             '.input-container': {
-              borderRadius: '12px',
-              borderColor: '#E5E7EB',
-              borderWidth: '2px',
-              backgroundColor: '#FFFFFF',
-              fontSize: '16px',
-              color: '#374151',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              padding: '16px 20px'
+              borderRadius: '8px',
+              borderColor: '#D1D5DB',
+              borderWidth: '1px'
             },
             '.input-container.is-focus': {
-              borderColor: '#D1D5DB',
-              backgroundColor: '#FFFFFF'
+              borderColor: '#3B82F6'
             },
             '.input-container.is-error': {
               borderColor: '#EF4444'
             },
-            'input': {
-              fontSize: '16px',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              color: '#374151'
-            },
-            '::placeholder': {
-              color: '#9CA3AF',
-              fontWeight: '400'
+            '.message-text': {
+              color: '#EF4444'
             }
           }
         };
