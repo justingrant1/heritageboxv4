@@ -308,7 +308,7 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
           className="relative"
           style={{
             display: showLoadingState || showErrorState ? 'none' : 'block',
-            minHeight: '200px' // Accommodate card number, expiry, and CVV fields
+            minHeight: '120px' // Reduced height for less empty space
           }}
         />
         
@@ -418,12 +418,6 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
           </div>
           <span className="text-xs text-gray-500 font-medium">PCI Compliant</span>
         </div>
-      </div>
-      
-      {/* Bottom Security Message */}
-      <div className="flex items-start justify-center gap-3 text-sm text-gray-500">
-        <Lock size={16} className="text-green-600 mt-0.5 flex-shrink-0" />
-        <span className="text-center leading-relaxed">Your payment information is secure and encrypted with 256-bit SSL</span>
       </div>
     </div>
   );
