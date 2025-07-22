@@ -1,317 +1,198 @@
-// Utility functions for Square API integration
-import { generateOrderId } from './emailUtils';
+// Square Catalog Product Mapping
+export const SQUARE_CATALOG_MAPPING = {
+  // Main Packages
+  packages: {
+    starter: {
+      itemId: 'CWZUFHRUS6WG223QCKMLGDMV',
+      variationId: 'GNQP4YZH57MGVR265N4QA7QH',
+      name: 'Starter Package',
+      price: 69.00,
+      description: 'Perfect for a small collection of memories. Digitize up to 3 tapes OR up to 75 photos with online access to digital files and free shipping both ways.',
+      digitalFiles: '3 tapes OR 75 photos',
+      processingTime: '4-6 weeks'
+    },
+    popular: {
+      itemId: 'SRFFZ5C7PZ2FP2MMQC4SF5SO',
+      variationId: 'MXDI5KGKHQE2G7MVWPGJWZIS',
+      name: 'Popular Package',
+      price: 179.00,
+      description: 'Our most popular package for families. Digitize up to 10 tapes OR up to 250 photos with online access to digital files, free shipping both ways, and 1 year free online backup.',
+      digitalFiles: '10 tapes OR 250 photos',
+      processingTime: '4-6 weeks'
+    },
+    dustyRose: {
+      itemId: 'SR4WG6NXKQRBPZZR5SAIQ42V',
+      variationId: 'GKIADSF5IJQEAAKCIL2WXZEK',
+      name: 'Dusty Rose Package',
+      price: 349.00,
+      description: 'Great for larger collections. Digitize up to 20 tapes OR up to 500 photos with online access to digital files, free shipping both ways, and 1 year free online backup.',
+      digitalFiles: '20 tapes OR 500 photos',
+      processingTime: '4-6 weeks'
+    },
+    eternal: {
+      itemId: '6QQ3TRFXNERSKJO7RDJPJIRZ',
+      variationId: 'X2N4DL3YZBKJYAICCVYMSJ6Y',
+      name: 'Eternal Package',
+      price: 599.00,
+      description: 'For preserving a lifetime of memories. Digitize up to 40 tapes OR up to 1000 photos with online access to digital files, free shipping both ways, and 1 year free online backup.',
+      digitalFiles: '40 tapes OR 1000 photos',
+      processingTime: '4-6 weeks'
+    }
+  },
 
-// Square API endpoints (will be set from environment variables)
-const SQUARE_API_URL = process.env.SQUARE_API_URL || 'https://connect.squareup.com';
-const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
-const SQUARE_LOCATION_ID = process.env.SQUARE_LOCATION_ID;
+  // Add-on Services
+  addons: {
+    customUsb: {
+      itemId: 'NCR5WYLYAJOCWVG4S3IMNZPF',
+      variationId: 'SMW4WXZUAE6E5L3FTS76NC7Y',
+      name: 'Custom USB Drive',
+      price: 24.95,
+      description: 'Physical backup for your memories on a custom USB drive.'
+    },
+    expeditedProcessing: {
+      itemId: '56ZXSWLL3X3TMEQBYM6KJWXF',
+      variationId: '37LXAW3CQ7ONF7AGNCYDWRRT',
+      name: 'Expedited Processing',
+      price: 29.99,
+      description: 'Faster processing of your memories in 2-3 weeks instead of standard 4-6 weeks.',
+      processingTime: '2-3 weeks'
+    },
+    rushProcessing: {
+      itemId: '3P62CBU2OECIDL4PKTOWPFWM',
+      variationId: 'HSMOF4CINCKHVWUPCEN5ZBOU',
+      name: 'Rush Processing',
+      price: 64.99,
+      description: 'Priority handling for urgent projects with completion in 10 business days.',
+      processingTime: '10 business days'
+    }
+  },
 
-// Interface definitions for Square API requests
-interface SquareCustomer {
-  given_name?: string;
-  family_name?: string;
-  email_address?: string;
-  phone_number?: string;
-  address?: {
-    address_line_1?: string;
-    locality?: string;
-    administrative_district_level_1?: string;
-    postal_code?: string;
-    country?: string;
+  // Subscriptions
+  subscriptions: {
+    onlineGallery: {
+      itemId: 'KG44MEJ2E5GKEG3Y3HA6DAZ2',
+      variationId: 'YJ3AGBF7MRHW2QQ6KI5DMSPG',
+      name: 'Online Gallery & Backup',
+      price: 0.00, // First year free
+      description: 'Annual subscription for secure online gallery and cloud backup storage. First year included, renews at $49/year.'
+    }
+  }
+};
+
+// Coupon code to Square discount ID mapping
+export const COUPON_CODE_MAPPING = {
+  '99DOFF': '7RQTL7HC3MC6OPOJXO4QOWHY',  // $99 off
+  '99SOFF': 'YNCJK4BPNMNUUJJT5S2SWYGP',  // $99 off shipping
+  '15OFF': 'O4LYCD2U5MDIG5B6VMNUH6JB',   // 15% off
+  'SAVE15': 'QL2BRYKDUXOOASYR2S6ORYTE'   // 15% off
+};
+
+// Helper function to get package details by key
+export function getPackageDetails(packageKey: string) {
+  return SQUARE_CATALOG_MAPPING.packages[packageKey];
+}
+
+// Helper function to get addon details by key
+export function getAddonDetails(addonKey: string) {
+  return SQUARE_CATALOG_MAPPING.addons[addonKey];
+}
+
+// Helper function to map frontend package names to Square catalog
+export function mapPackageToSquare(packageName: string) {
+  const packageMap = {
+    'Starter Package': 'starter',
+    'Popular Package': 'popular', 
+    'Dusty Rose Package': 'dustyRose',
+    'Eternal Package': 'eternal'
   };
-  reference_id?: string;
-}
-
-interface SquareOrderLineItem {
-  name: string;
-  quantity: string;
-  base_price_money?: {
-    amount: number;
-    currency: string;
-  };
-  note?: string;
-}
-
-interface SquareOrder {
-  location_id: string;
-  customer_id?: string;
-  reference_id?: string;
-  line_items: SquareOrderLineItem[];
-  metadata?: { [key: string]: string };
-}
-
-// Create customer in Square
-export async function createSquareCustomer(customerData: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-}): Promise<{ success: boolean; customerId?: string; error?: string }> {
-  try {
-    const squareCustomer: SquareCustomer = {
-      given_name: customerData.firstName,
-      family_name: customerData.lastName,
-      email_address: customerData.email,
-      phone_number: customerData.phone,
-      address: {
-        address_line_1: customerData.address,
-        locality: customerData.city,
-        administrative_district_level_1: customerData.state,
-        postal_code: customerData.zipCode,
-        country: 'US'
-      },
-      reference_id: `hb_${Date.now()}`
-    };
-
-    const response = await fetch(`${SQUARE_API_URL}/v2/customers`, {
-      method: 'POST',
-      headers: {
-        'Square-Version': '2024-02-15',
-        'Authorization': `Bearer ${SQUARE_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        given_name: squareCustomer.given_name,
-        family_name: squareCustomer.family_name,
-        email_address: squareCustomer.email_address,
-        phone_number: squareCustomer.phone_number,
-        address: squareCustomer.address,
-        reference_id: squareCustomer.reference_id,
-        idempotency_key: crypto.randomUUID()
-      })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error('Square customer creation failed:', result);
-      return { 
-        success: false, 
-        error: result.errors?.[0]?.detail || 'Failed to create customer in Square' 
-      };
-    }
-
-    return {
-      success: true,
-      customerId: result.customer?.id
-    };
-  } catch (error) {
-    console.error('Error creating Square customer:', error);
-    return { 
-      success: false, 
-      error: 'Network error creating customer in Square' 
-    };
-  }
-}
-
-// Create order in Square
-export async function createSquareOrder(orderData: {
-  customerId?: string;
-  packageType: string;
-  packagePrice: number;
-  usbDrives: number;
-  cloudBackup: number;
-  digitizingSpeed: string;
-  digitizingPrice: number;
-  couponCode?: string;
-  discountPercent: number;
-  totalAmount: number;
-  orderId: string;
-}): Promise<{ success: boolean; squareOrderId?: string; error?: string }> {
-  try {
-    // Create line items for the order
-    const lineItems: SquareOrderLineItem[] = [];
-
-    // Main package line item
-    lineItems.push({
-      name: `${orderData.packageType} Package - Memory Digitization`,
-      quantity: '1',
-      base_price_money: {
-        amount: Math.round(orderData.packagePrice * 100), // Convert to cents
-        currency: 'USD'
-      },
-      note: `Heritage Box ${orderData.packageType} memory digitization package`
-    });
-
-    // USB drives if any
-    if (orderData.usbDrives > 0) {
-      lineItems.push({
-        name: 'Custom USB Drive',
-        quantity: orderData.usbDrives.toString(),
-        base_price_money: {
-          amount: 2495, // $24.95 in cents
-          currency: 'USD'
-        },
-        note: 'Physical backup of digitized memories'
-      });
-    }
-
-    // Cloud backup if any (free but we'll track it)
-    if (orderData.cloudBackup > 0) {
-      lineItems.push({
-        name: 'Online Gallery & Backup (1 Year)',
-        quantity: orderData.cloudBackup.toString(),
-        base_price_money: {
-          amount: 0,
-          currency: 'USD'
-        },
-        note: 'Secure cloud storage and online gallery access - Included free'
-      });
-    }
-
-    // Digitizing speed upgrade if not standard
-    if (orderData.digitizingPrice > 0) {
-      lineItems.push({
-        name: `${orderData.digitizingSpeed} Processing`,
-        quantity: '1',
-        base_price_money: {
-          amount: Math.round(orderData.digitizingPrice * 100),
-          currency: 'USD'
-        },
-        note: `Expedited digitization processing - ${orderData.digitizingSpeed}`
-      });
-    }
-
-    // Create discounts array if applicable
-    const discounts = [];
-    if (orderData.couponCode && orderData.discountPercent > 0) {
-      discounts.push({
-        name: `Coupon: ${orderData.couponCode}`,
-        percentage: orderData.discountPercent.toString(),
-        scope: 'ORDER'
-      });
-    }
-
-    const squareOrder: any = {
-      location_id: SQUARE_LOCATION_ID,
-      reference_id: orderData.orderId,
-      line_items: lineItems,
-      metadata: {
-        source: 'HeritageBox Website',
-        order_type: 'Memory Digitization',
-        package_type: orderData.packageType,
-        processing_speed: orderData.digitizingSpeed,
-        ...(orderData.couponCode && { coupon_code: orderData.couponCode })
-      }
-    };
-
-    // Add customer ID if available
-    if (orderData.customerId) {
-      squareOrder.customer_id = orderData.customerId;
-    }
-
-    // Add discounts if any
-    if (discounts.length > 0) {
-      squareOrder.discounts = discounts;
-    }
-
-    const response = await fetch(`${SQUARE_API_URL}/v2/orders`, {
-      method: 'POST',
-      headers: {
-        'Square-Version': '2024-02-15',
-        'Authorization': `Bearer ${SQUARE_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        order: squareOrder,
-        idempotency_key: crypto.randomUUID()
-      })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error('Square order creation failed:', result);
-      return { 
-        success: false, 
-        error: result.errors?.[0]?.detail || 'Failed to create order in Square' 
-      };
-    }
-
-    return {
-      success: true,
-      squareOrderId: result.order?.id
-    };
-  } catch (error) {
-    console.error('Error creating Square order:', error);
-    return { 
-      success: false, 
-      error: 'Network error creating order in Square' 
-    };
-  }
-}
-
-// Helper function to search for existing customer by email
-export async function findSquareCustomerByEmail(email: string): Promise<{ success: boolean; customerId?: string; error?: string }> {
-  try {
-    const response = await fetch(`${SQUARE_API_URL}/v2/customers/search`, {
-      method: 'POST',
-      headers: {
-        'Square-Version': '2024-02-15',
-        'Authorization': `Bearer ${SQUARE_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        filter: {
-          email_address: {
-            exact: email
-          }
-        }
-      })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error('Square customer search failed:', result);
-      return { 
-        success: false, 
-        error: result.errors?.[0]?.detail || 'Failed to search customers in Square' 
-      };
-    }
-
-    // Check if customer was found
-    if (result.customers && result.customers.length > 0) {
-      return {
-        success: true,
-        customerId: result.customers[0].id
-      };
-    } else {
-      return { success: false, error: 'Customer not found' };
-    }
-  } catch (error) {
-    console.error('Error searching Square customer:', error);
-    return { 
-      success: false, 
-      error: 'Network error searching customer in Square' 
-    };
-  }
-}
-
-// Helper function to get or create customer in Square
-export async function getOrCreateSquareCustomer(customerData: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-}): Promise<{ success: boolean; customerId?: string; error?: string }> {
-  // First try to find existing customer by email
-  const searchResult = await findSquareCustomerByEmail(customerData.email);
   
-  if (searchResult.success && searchResult.customerId) {
-    console.log('Found existing Square customer:', searchResult.customerId);
-    return searchResult;
+  return packageMap[packageName] ? SQUARE_CATALOG_MAPPING.packages[packageMap[packageName]] : null;
+}
+
+// Helper function to create line items from order details
+export function createSquareLineItems(orderDetails: any): any[] {
+  const lineItems: any[] = [];
+
+  // Add main package
+  if (orderDetails.packageName) {
+    const packageDetails = mapPackageToSquare(orderDetails.packageName);
+    if (packageDetails) {
+      lineItems.push({
+        catalog_object_id: packageDetails.variationId,
+        quantity: '1',
+        note: `Digital files: ${packageDetails.digitalFiles}, Processing: ${packageDetails.processingTime}`
+      });
+    }
   }
 
-  // If not found, create new customer
-  console.log('Creating new Square customer for:', customerData.email);
-  return await createSquareCustomer(customerData);
+  // Add selected addons
+  if (orderDetails.addons) {
+    orderDetails.addons.forEach((addon: any) => {
+      let addonDetails = null;
+      
+      // Map addon names to catalog items
+      switch (addon.name) {
+        case 'Custom USB Drive':
+          addonDetails = SQUARE_CATALOG_MAPPING.addons.customUsb;
+          break;
+        case 'Expedited Processing':
+          addonDetails = SQUARE_CATALOG_MAPPING.addons.expeditedProcessing;
+          break;
+        case 'Rush Processing':
+          addonDetails = SQUARE_CATALOG_MAPPING.addons.rushProcessing;
+          break;
+      }
+
+      if (addonDetails) {
+        lineItems.push({
+          catalog_object_id: addonDetails.variationId,
+          quantity: String(addon.quantity || 1),
+          note: addonDetails.description
+        });
+      }
+    });
+  }
+
+  // Add online gallery subscription if included
+  if (orderDetails.includeOnlineGallery) {
+    const galleryDetails = SQUARE_CATALOG_MAPPING.subscriptions.onlineGallery;
+    lineItems.push({
+      catalog_object_id: galleryDetails.variationId,
+      quantity: '1',
+      note: 'First year included - renews at $49/year'
+    });
+  }
+
+  return lineItems;
+}
+
+// Helper function to calculate processing time based on addons
+export function calculateProcessingTime(orderDetails: any): string {
+  if (orderDetails.addons) {
+    const hasRush = orderDetails.addons.some((addon: any) => addon.name === 'Rush Processing');
+    const hasExpedited = orderDetails.addons.some((addon: any) => addon.name === 'Expedited Processing');
+    
+    if (hasRush) return '10 business days';
+    if (hasExpedited) return '2-3 weeks';
+  }
+  
+  return '4-6 weeks';
+}
+
+// Helper function to format customer data for Square
+export function formatCustomerData(customerDetails: any) {
+  return {
+    given_name: customerDetails.firstName || '',
+    family_name: customerDetails.lastName || '',
+    email_address: customerDetails.email || '',
+    phone_number: customerDetails.phone || '',
+    address: customerDetails.address ? {
+      address_line_1: customerDetails.address.street || '',
+      address_line_2: customerDetails.address.street2 || '',
+      locality: customerDetails.address.city || '',
+      administrative_district_level_1: customerDetails.address.state || '',
+      postal_code: customerDetails.address.zip || '',
+      country: customerDetails.address.country || 'US'
+    } : undefined
+  };
 }

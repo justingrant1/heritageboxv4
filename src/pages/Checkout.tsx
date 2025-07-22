@@ -456,11 +456,51 @@ const Checkout = () => {
           token,
           amount: parseFloat(calculateTotal()),
           orderDetails: {
-            package: packageType,
-            usbDrives,
-            cloudBackup,
-            digitizingSpeed,
-            customerInfo: validatedFormData
+            packageName: `${packageDetails.name} Package`,
+            couponCode: appliedCoupon || undefined,
+            addons: [
+              ...(usbDrives > 0 ? [{
+                name: 'Custom USB Drive',
+                quantity: usbDrives,
+                price: USB_DRIVE_PRICE,
+                description: 'Physical backup for your memories on a custom USB drive.'
+              }] : []),
+              ...(cloudBackup > 0 ? [{
+                name: 'Online Gallery & Backup',
+                quantity: 1,
+                price: 0,
+                description: 'Annual subscription for secure online gallery and cloud backup storage. First year included, renews at $49/year.'
+              }] : []),
+              ...(digitizingSpeed !== 'standard' ? [{
+                name: getSelectedDigitizingOption().name === 'Expedited' ? 'Expedited Processing' : 'Rush Processing',
+                quantity: 1,
+                price: getSelectedDigitizingOption().price,
+                description: getSelectedDigitizingOption().description
+              }] : [])
+            ],
+            customerDetails: {
+              firstName: validatedFormData.firstName,
+              lastName: validatedFormData.lastName,
+              email: validatedFormData.email,
+              phone: validatedFormData.phone,
+              address: {
+                street: validatedFormData.address,
+                city: validatedFormData.city,
+                state: validatedFormData.state,
+                zip: validatedFormData.zipCode,
+                country: 'US'
+              }
+            },
+            customerNotes: '',
+            shippingAddress: {
+              name: `${validatedFormData.firstName} ${validatedFormData.lastName}`,
+              street: validatedFormData.address,
+              city: validatedFormData.city,
+              state: validatedFormData.state,
+              zip: validatedFormData.zipCode,
+              country: 'US'
+            },
+            includeOnlineGallery: cloudBackup > 0
           }
         }),
       });
