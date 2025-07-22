@@ -138,7 +138,7 @@ What would you like to know?`,
       });
 
       // Get AI or human response based on current mode
-      const endpoint = session.mode === 'ai' ? '/api/chat-ai' : '/api/chat-human';
+      const endpoint = session.mode === 'ai' ? '/api/chat-ai' : '/api/chat-slack';
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -222,7 +222,7 @@ What would you like to know?`,
 
     try {
       // Notify backend about mode switch
-      await fetch('/api/chat-human', {
+      await fetch('/api/chat-slack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

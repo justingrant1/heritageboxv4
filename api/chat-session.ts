@@ -1,9 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { v4 as uuidv4 } from 'uuid';
 
-const AIRTABLE_API_KEY = process.env.VITE_AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_CHAT_BASE_ID;
-const AIRTABLE_TRANSCRIPTS_TABLE = process.env.AIRTABLE_CHAT_TRANSCRIPTS_TABLE;
+const AIRTABLE_BASE_ID = 'appFMHAYZrTskpmdX';
+const AIRTABLE_TRANSCRIPTS_TABLE = 'tbl6gHHlvSwx4gQpB';
 
 interface Message {
   id: string;
@@ -20,31 +19,45 @@ interface ChatTranscriptRecord {
   SlackThreadID?: string;
 }
 
-async function createChatSession(sessionId: string, initialMessage: Message) {
-  const transcript = formatTranscriptEntry(initialMessage);
-  
-  const record: ChatTranscriptRecord = {
-    SessionID: sessionId,
-    Transcript: transcript,
-    Status: 'Active'
-  };
-
-  const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TRANSCRIPTS_TABLE}`, {
+// Helper function to call our Airtable operations endpoint
+async function callAirtableAPI(operation: string, params: any) {
+  const response = await fetch(`${process.env.VERCEL_URL || 'http://localhost:8080'}/api/airtable-operations`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      fields: record
-    })
+      operation,
+      baseId: AIRTABLE_BASE_ID,
+      tableId: AIRTABLE_TRANSCRIPTS_TABLE,
+      ...params
+    }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create chat session: ${response.statusText}`);
+    throw new Error(`Airtable operation failed: ${response.statusText}`);
   }
 
-  return response.json();
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || 'Airtable operation failed');
+  }
+
+  return result.data;
+}
+
+async function createChatSession(sessionId: string, initialMessage: Message) {
+  const transcript = formatTranscriptEntry(initialMessage);
+  
+  const record = await callAirtableAPI('create_record', {
+    fields: {
+      'SessionID': sessionId,
+      'Transcript': transcript,
+      'Status': 'Active'
+    }
+  });
+
+  return record;
 }
 
 async function updateChatSession(
@@ -52,57 +65,36 @@ async function updateChatSession(
   message: Message, 
   slackThreadId?: string
 ) {
-  // First, get the current record
-  const searchResponse = await fetch(
-    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TRANSCRIPTS_TABLE}?filterByFormula={SessionID}="${sessionId}"`,
-    {
-      headers: {
-        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-      }
-    }
-  );
+  // First, search for the existing record
+  const searchResult = await callAirtableAPI('search_records', {
+    filterByFormula: `{SessionID} = "${sessionId}"`
+  });
 
-  if (!searchResponse.ok) {
-    throw new Error('Failed to find chat session');
-  }
-
-  const searchData = await searchResponse.json();
-  if (searchData.records.length === 0) {
+  if (!searchResult.records || searchResult.records.length === 0) {
     throw new Error('Chat session not found');
   }
 
-  const record = searchData.records[0];
+  const record = searchResult.records[0];
   const existingTranscript = record.fields.Transcript || '';
   const newTranscriptEntry = formatTranscriptEntry(message);
   const updatedTranscript = existingTranscript + '\n' + newTranscriptEntry;
 
   const updateFields: any = {
-    Transcript: updatedTranscript
+    'Transcript': updatedTranscript
   };
 
   if (slackThreadId) {
-    updateFields.SlackThreadID = slackThreadId;
+    updateFields['SlackThreadID'] = slackThreadId;
   }
 
-  const updateResponse = await fetch(
-    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TRANSCRIPTS_TABLE}/${record.id}`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        fields: updateFields
-      })
-    }
-  );
+  const updateResult = await callAirtableAPI('update_records', {
+    records: [{
+      id: record.id,
+      fields: updateFields
+    }]
+  });
 
-  if (!updateResponse.ok) {
-    throw new Error(`Failed to update chat session: ${updateResponse.statusText}`);
-  }
-
-  return updateResponse.json();
+  return updateResult;
 }
 
 function formatTranscriptEntry(message: Message): string {
@@ -153,6 +145,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   } catch (error) {
     console.error('Chat session error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
   }
 }
