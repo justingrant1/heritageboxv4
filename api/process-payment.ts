@@ -320,11 +320,57 @@ export default async function handler(request: Request) {
                 customerId
             });
 
-            // Create line items from catalog
-            const lineItems = createSquareLineItems(orderDetails);
+            // Create basic line items without catalog references for now
+            const lineItems: any[] = [];
             
+            // Add main package as basic line item
+            if (orderDetails.packageName) {
+                const packageDetails = mapPackageToSquare(orderDetails.packageName);
+                const packagePrice = packageDetails ? packageDetails.price : (amount * 0.8); // Estimate main package as 80% of total
+                
+                lineItems.push({
+                    name: orderDetails.packageName,
+                    quantity: '1',
+                    base_price_money: {
+                        amount: Math.round(packagePrice * 100),
+                        currency: 'USD'
+                    },
+                    note: packageDetails ? `Digital files: ${packageDetails.digitalFiles}, Processing: ${packageDetails.processingTime}` : 'Memory digitization service'
+                });
+            }
+
+            // Add addons as basic line items
+            if (orderDetails.addons && orderDetails.addons.length > 0) {
+                orderDetails.addons.forEach((addon: any) => {
+                    let addonPrice = 0;
+                    switch (addon.name) {
+                        case 'Custom USB Drive':
+                            addonPrice = 24.95;
+                            break;
+                        case 'Expedited Processing':
+                            addonPrice = 29.99;
+                            break;
+                        case 'Rush Processing':
+                            addonPrice = 64.99;
+                            break;
+                        default:
+                            addonPrice = addon.price || 0;
+                    }
+                    
+                    lineItems.push({
+                        name: addon.name,
+                        quantity: String(addon.quantity || 1),
+                        base_price_money: {
+                            amount: Math.round(addonPrice * 100),
+                            currency: 'USD'
+                        },
+                        note: `Add-on service: ${addon.name}`
+                    });
+                });
+            }
+            
+            // Fallback if no line items were created
             if (lineItems.length === 0) {
-                // Fallback to generic line item
                 lineItems.push({
                     name: 'Heritage Box Service',
                     quantity: '1',
@@ -357,21 +403,40 @@ export default async function handler(request: Request) {
                 orderPayload.order.customer_id = customerId;
             }
 
-            // Add discount if coupon code is provided
+            // Add discount if coupon code is provided (using basic discount instead of catalog)
             if (orderDetails.couponCode) {
                 const couponCode = orderDetails.couponCode.toUpperCase();
-                const discountId = COUPON_CODE_MAPPING[couponCode];
+                let discount: any = null;
                 
-                if (discountId) {
-                    orderPayload.order.discounts = [{
-                        catalog_object_id: discountId,
-                        name: `Coupon: ${couponCode}`,
-                        scope: 'ORDER'
-                    }];
-                    
-                    logEvent('applying_square_discount', {
+                switch (couponCode) {
+                    case '99DOFF':
+                    case '99SOFF':
+                        discount = {
+                            name: `Coupon: ${couponCode}`,
+                            type: 'FIXED_AMOUNT',
+                            amount_money: {
+                                amount: 9900, // $99 in cents
+                                currency: 'USD'
+                            },
+                            scope: 'ORDER'
+                        };
+                        break;
+                    case '15OFF':
+                    case 'SAVE15':
+                        discount = {
+                            name: `Coupon: ${couponCode}`,
+                            type: 'FIXED_PERCENTAGE',
+                            percentage: '15.0',
+                            scope: 'ORDER'
+                        };
+                        break;
+                }
+                
+                if (discount) {
+                    orderPayload.order.discounts = [discount];
+                    logEvent('applying_basic_discount', {
                         couponCode,
-                        discountId
+                        discountType: discount.type
                     });
                 }
             }
