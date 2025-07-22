@@ -341,84 +341,113 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
   };
 
   return (
-    <div className="bg-white">
-      {/* Security Badge */}
-      <div className="flex items-center gap-2 mb-6 p-3 bg-green-50 rounded-xl border border-green-100">
-        <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center">
-          <ShieldCheck size={16} />
+    <div className="bg-white max-w-2xl mx-auto">
+      {/* Premium Header Section */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 rounded-2xl border border-blue-100 mb-6">
+          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg">
+            <ShieldCheck size={24} />
+          </div>
+          <div className="text-left">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Secure Payment</h2>
+            <p className="text-blue-600 font-medium text-sm">Protected by 256-bit SSL encryption</p>
+          </div>
         </div>
-        <span className="text-green-700 font-medium text-sm">Secure payment processing</span>
       </div>
 
-      {/* Card Information Header */}
-      <div className="flex items-start gap-3 mb-4">
-        <div className="w-12 h-12 bg-gray-800 text-white flex items-center justify-center rounded-xl">
-          <CardIcon size={20} />
+      {/* Credit Card Logos - Premium Layout */}
+      <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100">
+        <div className="flex items-center justify-center gap-6 mb-4">
+          <img src="/visa.svg" alt="Visa" className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity" />
+          <img src="/mastercard.svg" alt="Mastercard" className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity" />
+          <img src="/amex.svg" alt="American Express" className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity" />
         </div>
-        <div>
-          <h3 className="text-xl font-bold text-gray-900 mb-1">Card Information</h3>
-          <p className="text-gray-600">Enter your card details below</p>
-        </div>
-      </div>
-      
-      {/* Credit Card Logos */}
-      <div className="flex items-center gap-3 mb-6">
-        <img src="/mastercard.svg" alt="Mastercard" className="h-8 w-auto" />
-        <img src="/visa.svg" alt="Visa" className="h-8 w-auto" />
-        <img src="/amex.svg" alt="American Express" className="h-8 w-auto" />
-      </div>
-      
-      {/* Card Input Container */}
-      <div className="mb-6">
-        {renderCardContainer()}
-      </div>
-      
-      {/* Credit Cards Accepted */}
-      <div className="flex items-center gap-2 mb-6">
-        <CardIcon size={16} className="text-gray-500" />
-        <span className="text-gray-600 text-sm">All major credit cards accepted</span>
-      </div>
-      
-      {/* Pay Button */}
-      <Button
-        onClick={handlePaymentSubmit}
-        className="w-full h-14 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
-        disabled={isProcessing || !card || !!error}
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Processing Payment...
-          </>
-        ) : (
-          <>
-            Pay {amount}
-            <ShieldCheck className="w-5 h-5" />
-          </>
-        )}
-      </Button>
-      
-      {/* Security Badges */}
-      <div className="flex items-center justify-center gap-8 mt-6 mb-4">
-        <div className="flex flex-col items-center">
-          <ShieldCheck size={20} className="text-green-500 mb-1" />
-          <span className="text-xs text-gray-600 font-medium">SSL Secured</span>
-        </div>
-        <div className="flex flex-col items-center">
-          <ShieldCheck size={20} className="text-green-500 mb-1" />
-          <span className="text-xs text-gray-600 font-medium">Powered by</span>
-          <span className="text-xs text-gray-600 font-medium">Square</span>
-        </div>
-        <div className="flex flex-col items-center">
-          <ShieldCheck size={20} className="text-green-500 mb-1" />
-          <span className="text-xs text-gray-600 font-medium">PCI Compliant</span>
+        <div className="flex items-center justify-center gap-2">
+          <CardIcon size={18} className="text-gray-600" />
+          <span className="text-gray-600 font-medium">We accept all major credit cards</span>
         </div>
       </div>
       
-      {/* Bottom Security Message */}
-      <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mt-4">
-        <Lock size={16} className="text-green-600" />
-        <span className="text-center">Your payment information is secure and encrypted with 256-bit SSL</span>
+      {/* Card Information Section */}
+      <div className="bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 mb-8 border-2 border-gray-100 shadow-sm">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-16 h-16 bg-gradient-to-r from-gray-800 to-gray-700 text-white flex items-center justify-center rounded-2xl shadow-lg">
+            <CardIcon size={28} />
+          </div>
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Payment Details</h3>
+            <p className="text-gray-600 text-lg">Enter your card information securely</p>
+          </div>
+        </div>
+        
+        {/* Card Input Container - Enhanced */}
+        <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 shadow-inner">
+          {renderCardContainer()}
+        </div>
+      </div>
+      
+      {/* Payment Button - Premium Design */}
+      <div className="mb-8">
+        <Button
+          onClick={handlePaymentSubmit}
+          className="w-full h-16 bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 hover:from-green-600 hover:via-green-700 hover:to-emerald-700 text-white font-bold text-xl rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-4 transform hover:scale-[1.02] active:scale-[0.98]"
+          disabled={isProcessing || !card || !!error}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span>Processing Your Payment...</span>
+            </>
+          ) : (
+            <>
+              <Lock className="w-6 h-6" />
+              <span>Pay {amount} Securely</span>
+              <ShieldCheck className="w-6 h-6" />
+            </>
+          )}
+        </Button>
+        
+        {/* Instant confirmation text */}
+        <div className="text-center mt-4 text-gray-600">
+          <p className="text-sm">🚀 <strong>Instant confirmation</strong> • No hidden fees • Cancel anytime</p>
+        </div>
+      </div>
+      
+      {/* Trust Indicators - Premium Layout */}
+      <div className="bg-gradient-to-r from-green-50 via-blue-50 to-purple-50 rounded-2xl p-6 border border-gray-100">
+        <h4 className="text-center text-lg font-bold text-gray-800 mb-6">Your Security is Our Priority</h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full flex items-center justify-center mb-3 shadow-lg">
+              <ShieldCheck size={28} />
+            </div>
+            <h5 className="font-bold text-gray-900 mb-1">SSL Encrypted</h5>
+            <p className="text-sm text-gray-600">256-bit encryption protects your data</p>
+          </div>
+          
+          <div className="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center mb-3 shadow-lg">
+              <Lock size={28} />
+            </div>
+            <h5 className="font-bold text-gray-900 mb-1">PCI Compliant</h5>
+            <p className="text-sm text-gray-600">Meets highest security standards</p>
+          </div>
+          
+          <div className="flex flex-col items-center text-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full flex items-center justify-center mb-3 shadow-lg">
+              <ShieldCheck size={28} />
+            </div>
+            <h5 className="font-bold text-gray-900 mb-1">Powered by Square</h5>
+            <p className="text-sm text-gray-600">Trusted by millions worldwide</p>
+          </div>
+        </div>
+        
+        {/* Final Security Message */}
+        <div className="flex items-center justify-center gap-3 mt-6 p-4 bg-white/80 rounded-xl border border-gray-200">
+          <Lock size={20} className="text-green-600" />
+          <span className="text-gray-700 font-medium">We never store your card details • Processed securely by Square</span>
+        </div>
       </div>
     </div>
   );
