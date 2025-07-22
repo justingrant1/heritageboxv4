@@ -308,7 +308,7 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
           className="relative"
           style={{
             display: showLoadingState || showErrorState ? 'none' : 'block',
-            minHeight: '120px' // Reduced height for less empty space
+            minHeight: '200px' // Accommodate card number, expiry, and CVV fields
           }}
         />
         
@@ -341,28 +341,28 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
   };
 
   return (
-    <div className="bg-white max-w-md mx-auto">
+    <div className="bg-white">
       {/* Security Badge */}
-      <div className="flex items-center gap-3 mb-8 p-3 bg-gray-50 rounded-2xl">
-        <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0">
+      <div className="flex items-center gap-2 mb-6 p-3 bg-green-50 rounded-xl border border-green-100">
+        <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center">
           <ShieldCheck size={16} />
         </div>
-        <span className="text-gray-700 font-medium">Secure payment processing</span>
+        <span className="text-green-700 font-medium text-sm">Secure payment processing</span>
       </div>
 
       {/* Card Information Header */}
-      <div className="flex items-start gap-4 mb-6">
-        <div className="w-12 h-12 bg-slate-700 text-white flex items-center justify-center rounded-2xl flex-shrink-0">
-          <CardIcon size={24} />
+      <div className="flex items-start gap-3 mb-4">
+        <div className="w-12 h-12 bg-gray-800 text-white flex items-center justify-center rounded-xl">
+          <CardIcon size={20} />
         </div>
         <div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">Card Information</h3>
-          <p className="text-gray-500">Enter your card details below</p>
+          <h3 className="text-xl font-bold text-gray-900 mb-1">Card Information</h3>
+          <p className="text-gray-600">Enter your card details below</p>
         </div>
       </div>
       
       {/* Credit Card Logos */}
-      <div className="flex items-center justify-center gap-4 mb-8">
+      <div className="flex items-center gap-3 mb-6">
         <img src="/mastercard.svg" alt="Mastercard" className="h-8 w-auto" />
         <img src="/visa.svg" alt="Visa" className="h-8 w-auto" />
         <img src="/amex.svg" alt="American Express" className="h-8 w-auto" />
@@ -374,50 +374,51 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
       </div>
       
       {/* Credit Cards Accepted */}
-      <div className="flex items-center justify-center gap-2 mb-8">
-        <CardIcon size={16} className="text-gray-400" />
-        <span className="text-gray-500">All major credit cards accepted</span>
+      <div className="flex items-center gap-2 mb-6">
+        <CardIcon size={16} className="text-gray-500" />
+        <span className="text-gray-600 text-sm">All major credit cards accepted</span>
       </div>
       
       {/* Pay Button */}
       <Button
         onClick={handlePaymentSubmit}
-        className="w-full h-16 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-3 mb-8"
+        className="w-full h-14 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
         disabled={isProcessing || !card || !!error}
       >
         {isProcessing ? (
           <>
-            <Loader2 className="w-6 h-6 animate-spin" />
-            <span className="text-lg">Processing Payment...</span>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Processing Payment...
           </>
         ) : (
           <>
-            <span>Pay {amount}</span>
+            Pay {amount}
             <ShieldCheck className="w-5 h-5" />
           </>
         )}
       </Button>
       
       {/* Security Badges */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-center gap-8 mt-6 mb-4">
         <div className="flex flex-col items-center">
-          <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-1">
-            <ShieldCheck size={16} />
-          </div>
-          <span className="text-xs text-gray-500 font-medium">SSL Secured</span>
+          <ShieldCheck size={20} className="text-green-500 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">SSL Secured</span>
         </div>
         <div className="flex flex-col items-center">
-          <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-1">
-            <ShieldCheck size={16} />
-          </div>
-          <span className="text-xs text-gray-500 font-medium text-center">Powered by<br/>Square</span>
+          <ShieldCheck size={20} className="text-green-500 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">Powered by</span>
+          <span className="text-xs text-gray-600 font-medium">Square</span>
         </div>
         <div className="flex flex-col items-center">
-          <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-1">
-            <ShieldCheck size={16} />
-          </div>
-          <span className="text-xs text-gray-500 font-medium">PCI Compliant</span>
+          <ShieldCheck size={20} className="text-green-500 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">PCI Compliant</span>
         </div>
+      </div>
+      
+      {/* Bottom Security Message */}
+      <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mt-4">
+        <Lock size={16} className="text-green-600" />
+        <span className="text-center">Your payment information is secure and encrypted with 256-bit SSL</span>
       </div>
     </div>
   );
