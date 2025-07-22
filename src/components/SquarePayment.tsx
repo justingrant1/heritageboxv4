@@ -1,9 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Loader2, CreditCard as CardIcon, ShieldCheck } from 'lucide-react';
-import styles from './SquarePayment.module.css';
+import { Loader2, CreditCard as CardIcon, ShieldCheck, Lock } from 'lucide-react';
 
 // Define types for the Square SDK
 interface Square {
@@ -20,12 +18,37 @@ interface CardOptions {
       borderRadius?: string;
       borderColor?: string;
       borderWidth?: string;
+      backgroundColor?: string;
+      fontSize?: string;
+      color?: string;
+      fontFamily?: string;
+      padding?: string;
     };
     '.input-container.is-focus'?: {
       borderColor?: string;
+      backgroundColor?: string;
     };
     '.input-container.is-error'?: {
       borderColor?: string;
+    };
+    '.message-text'?: {
+      color?: string;
+      fontSize?: string;
+    };
+    '.message-link'?: {
+      color?: string;
+    };
+    '.message-icon'?: {
+      color?: string;
+    };
+    'input'?: {
+      fontSize?: string;
+      fontFamily?: string;
+      color?: string;
+    };
+    '::placeholder'?: {
+      color?: string;
+      fontWeight?: string;
     };
   };
 }
@@ -60,28 +83,29 @@ declare global {
 
 // Environment-aware configuration
 const getSquareConfig = () => {
-  const isProduction = import.meta.env.MODE === 'production';
+  // Use window global instead of import.meta.env for better compatibility
+  const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
 
   let appId;
   let locationId;
 
-  if (isProduction) {
-    // In production, we must have the production credentials.
-    appId = import.meta.env.VITE_SQUARE_APP_ID;
-    locationId = import.meta.env.VITE_SQUARE_LOCATION_ID;
+  // Try to get from env variables, fallback to sandbox values for development
+  if (typeof window !== 'undefined') {
+    // In production, these should be set via build process
+    appId = (window as any).__SQUARE_APP_ID__ || 'sq0idp-1Zchx5RshtaZ74spcf2w0A';
+    locationId = (window as any).__SQUARE_LOCATION_ID__ || 'LPFZYDYB5G5GM';
   } else {
-    // In development, we can use sandbox credentials as a fallback.
-    appId = import.meta.env.VITE_SQUARE_APP_ID || 'sq0idp-1Zchx5RshtaZ74spcf2w0A';
-    locationId = import.meta.env.VITE_SQUARE_LOCATION_ID || 'LPFZYDYB5G5GM';
+    // Fallback values
+    appId = 'sq0idp-1Zchx5RshtaZ74spcf2w0A';
+    locationId = 'LPFZYDYB5G5GM';
   }
 
   if (!appId || !locationId) {
-    console.error("Square configuration is missing. Ensure VITE_SQUARE_APP_ID and VITE_SQUARE_LOCATION_ID are set in your .env file for the current environment.");
-    // Return empty strings to prevent initialization with incorrect credentials.
+    console.error("Square configuration is missing.");
     return { appId: '', locationId: '', jsUrl: 'https://web.squarecdn.com/v1/square.js' };
   }
   
-  console.log('Square Config:', { appId, locationId, mode: import.meta.env.MODE });
+  console.log('Square Config:', { appId, locationId, isProduction });
   
   return {
     appId,
@@ -90,18 +114,11 @@ const getSquareConfig = () => {
   };
 };
 
-// Mobile detection utility
-const isMobileDevice = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-         (window.innerWidth <= 768);
-};
-
 const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: SquarePaymentProps) => {
   const [loaded, setLoaded] = useState(false);
   const [card, setCard] = useState<SquareCard | null>(null);
   const [cardLoading, setCardLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isMobile] = useState(isMobileDevice());
   const [config] = useState(getSquareConfig());
 
   // Cleanup function to destroy card instance
@@ -203,21 +220,36 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
         // Initialize with environment-aware configuration
         const payments = window.Square.payments(config.appId, config.locationId);
 
-        console.log("Creating card instance with mobile optimization");
+        console.log("Creating card instance");
         
-        // Minimal card configuration with only confirmed valid Square SDK styles
+        // Card styling to match the mobile design
         const cardOptions: CardOptions = {
           style: {
             '.input-container': {
-              borderRadius: '8px',
-              borderColor: '#D1D5DB',
-              borderWidth: '1px'
+              borderRadius: '12px',
+              borderColor: '#E5E7EB',
+              borderWidth: '2px',
+              backgroundColor: '#FFFFFF',
+              fontSize: '16px',
+              color: '#374151',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              padding: '16px 20px'
             },
             '.input-container.is-focus': {
-              borderColor: '#3B82F6'
+              borderColor: '#D1D5DB',
+              backgroundColor: '#FFFFFF'
             },
             '.input-container.is-error': {
               borderColor: '#EF4444'
+            },
+            'input': {
+              fontSize: '16px',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              color: '#374151'
+            },
+            '::placeholder': {
+              color: '#9CA3AF',
+              fontWeight: '400'
             }
           }
         };
@@ -230,13 +262,7 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
           throw new Error('Card container not found in DOM');
         }
 
-        // Add mobile-specific attributes to container
-        if (isMobile) {
-          container.style.minHeight = '120px';
-          container.setAttribute('data-mobile', 'true');
-        }
-
-        console.log("Attaching card to container with mobile support");
+        console.log("Attaching card to container");
         await cardInstance.attach('#card-container');
         console.log("Card attached successfully");
 
@@ -255,7 +281,7 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
 
     // Small delay to ensure DOM is ready
     setTimeout(initializeCard, 100);
-  }, [loaded, card, config, isMobile]);
+  }, [loaded, card, config]);
 
   const handlePaymentSubmit = async () => {
     if (!card) {
@@ -287,43 +313,31 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
     const showErrorState = error && !cardLoading;
     
     return (
-      <div className="space-y-3">
-        {/* Always render the card container for Square to attach to */}
+      <div className="space-y-4">
+        {/* Card container */}
         <div 
           id="card-container" 
-          className={`${styles.cardContainer} relative`}
-          data-mobile={isMobile ? 'true' : 'false'}
+          className="relative"
           style={{
-            // Hide the container when showing loading or error states
             display: showLoadingState || showErrorState ? 'none' : 'block',
-            // Additional mobile optimizations
-            ...(isMobile && {
-              touchAction: 'manipulation',
-              WebkitUserSelect: 'text',
-              userSelect: 'text'
-            })
+            minHeight: '200px' // Accommodate card number, expiry, and CVV fields
           }}
         />
         
         {/* Loading state overlay */}
         {showLoadingState && (
-          <div className={`${styles.cardContainer} ${isMobile ? styles.mobileLoadingContainer : ''} flex items-center justify-center`}>
-            <Loader2 className={`h-6 w-6 animate-spin text-gray-500 ${styles.loadingSpinner}`} />
-            <span className="ml-2 text-gray-500">
-              {isMobile ? 'Loading secure payment...' : 'Loading payment form...'}
-            </span>
+          <div className="flex items-center justify-center p-8 bg-gray-50 rounded-xl border-2 border-gray-200">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+            <span className="ml-2 text-gray-500">Loading secure payment...</span>
           </div>
         )}
 
         {/* Error state overlay */}
         {showErrorState && (
-          <div className={`${styles.errorContainer} ${styles.cardContainer} flex flex-col items-center justify-center`}>
-            <p className="font-medium">{error}</p>
-            <p className="text-sm mt-2 text-center">
-              {isMobile 
-                ? "Please refresh the page or try a different browser" 
-                : "Please refresh the page or try a different browser"
-              }
+          <div className="flex flex-col items-center justify-center p-8 bg-red-50 rounded-xl border-2 border-red-200">
+            <p className="font-medium text-red-800">{error}</p>
+            <p className="text-sm mt-2 text-center text-red-600">
+              Please refresh the page or try a different browser
             </p>
             <Button
               onClick={() => window.location.reload()}
@@ -334,42 +348,36 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
             </Button>
           </div>
         )}
-
-        {/* Success state info */}
-        {loaded && !showLoadingState && !showErrorState && (
-          <>
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <div className="flex items-center">
-                <CardIcon size={14} className="mr-1" />
-                <span>All major credit cards accepted</span>
-              </div>
-              {isMobile && (
-                <div className={`text-green-600 font-medium ${styles.successIndicator}`}>
-                  <span>Autocomplete enabled</span>
-                </div>
-              )}
-            </div>
-            {isMobile && (
-              <div className={`${styles.autocompleteHint}`}>
-                💡 Tip: Your browser should offer to save and autofill card information for faster checkout.
-              </div>
-            )}
-          </>
-        )}
       </div>
     );
   };
 
   return (
-    <div className={`${styles.squarePaymentContainer}`}>
+    <div className="bg-white">
+      {/* Security Badge */}
+      <div className="flex items-center gap-2 mb-6 p-3 bg-green-50 rounded-xl border border-green-100">
+        <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center">
+          <ShieldCheck size={16} />
+        </div>
+        <span className="text-green-700 font-medium text-sm">Secure payment processing</span>
+      </div>
+
       {/* Card Information Header */}
-      <div className="flex items-start gap-3 mb-6">
-        <div className="w-8 h-8 bg-gray-800 text-white flex items-center justify-center rounded-lg mt-1">
-          <CardIcon size={16} />
+      <div className="flex items-start gap-3 mb-4">
+        <div className="w-12 h-12 bg-gray-800 text-white flex items-center justify-center rounded-xl">
+          <CardIcon size={20} />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Card Information</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-1">Card Information</h3>
+          <p className="text-gray-600">Enter your card details below</p>
         </div>
+      </div>
+      
+      {/* Credit Card Logos */}
+      <div className="flex items-center gap-3 mb-6">
+        <img src="/mastercard.svg" alt="Mastercard" className="h-8 w-auto" />
+        <img src="/visa.svg" alt="Visa" className="h-8 w-auto" />
+        <img src="/amex.svg" alt="American Express" className="h-8 w-auto" />
       </div>
       
       {/* Card Input Container */}
@@ -377,24 +385,16 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
         {renderCardContainer()}
       </div>
       
-      {/* Credit Cards Accepted Link */}
-      <div className="mb-6">
-        <button className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors text-sm">
-          <CardIcon size={16} />
-          <span>All major credit cards accepted</span>
-        </button>
-      </div>
-      
-      {/* Security Message */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-        <ShieldCheck size={16} className="text-green-600" />
-        <span>Your payment information is secure and encrypted with 256-bit SSL</span>
+      {/* Credit Cards Accepted */}
+      <div className="flex items-center gap-2 mb-6">
+        <CardIcon size={16} className="text-gray-500" />
+        <span className="text-gray-600 text-sm">All major credit cards accepted</span>
       </div>
       
       {/* Pay Button */}
       <Button
         onClick={handlePaymentSubmit}
-        className={`w-full h-14 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3`}
+        className="w-full h-14 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
         disabled={isProcessing || !card || !!error}
       >
         {isProcessing ? (
@@ -410,10 +410,27 @@ const SquarePayment = ({ onSuccess, buttonColorClass, isProcessing, amount }: Sq
         )}
       </Button>
       
+      {/* Security Badges */}
+      <div className="flex items-center justify-center gap-8 mt-6 mb-4">
+        <div className="flex flex-col items-center">
+          <ShieldCheck size={20} className="text-green-500 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">SSL Secured</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <ShieldCheck size={20} className="text-green-500 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">Powered by</span>
+          <span className="text-xs text-gray-600 font-medium">Square</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <ShieldCheck size={20} className="text-green-500 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">PCI Compliant</span>
+        </div>
+      </div>
+      
       {/* Bottom Security Message */}
       <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mt-4">
-        <ShieldCheck size={16} className="text-green-600" />
-        <span>Your payment information is secure and encrypted with 256-bit SSL</span>
+        <Lock size={16} className="text-green-600" />
+        <span className="text-center">Your payment information is secure and encrypted with 256-bit SSL</span>
       </div>
     </div>
   );
