@@ -502,9 +502,6 @@ const Checkout = () => {
       const orderId = generateSequentialOrderNumber();
       console.log('💳 PAYMENT SUCCESS - Generated single Order ID:', orderId);
       
-      // Store order ID in sessionStorage to ensure consistency across pages
-      sessionStorage.setItem('currentOrderId', orderId);
-      
       // Create add-ons array for legacy support
       const addOnsArray = [];
       if (usbDrives > 0) {

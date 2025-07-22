@@ -34,24 +34,16 @@ const OrderConfirmation = () => {
   
   const passedOrderNumber = location.state?.orderNumber;
   
-  // Use the passed order number if available, otherwise check sessionStorage, then generate fallback
+  // Use the passed order number if available, otherwise generate a fallback
   const [orderNumber] = useState(() => {
     if (passedOrderNumber) {
       console.log('✅ ORDER CONFIRMATION - Using passed order number:', passedOrderNumber);
       return passedOrderNumber;
+    } else {
+      const fallbackOrder = generateSequentialOrderNumber();
+      console.log('⚠️ ORDER CONFIRMATION - No order number passed, generating fallback:', fallbackOrder);
+      return fallbackOrder;
     }
-    
-    // Check sessionStorage for the order ID
-    const storedOrderId = sessionStorage.getItem('currentOrderId');
-    if (storedOrderId) {
-      console.log('✅ ORDER CONFIRMATION - Using stored order ID from sessionStorage:', storedOrderId);
-      return storedOrderId;
-    }
-    
-    // Last resort: generate fallback (this should rarely happen now)
-    const fallbackOrder = generateSequentialOrderNumber();
-    console.log('⚠️ ORDER CONFIRMATION - No order number found, generating fallback:', fallbackOrder);
-    return fallbackOrder;
   });
   
   // Get button color class based on package type
