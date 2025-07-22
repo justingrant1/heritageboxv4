@@ -223,14 +223,14 @@ const Checkout = () => {
         description: "You saved 15% on your order!",
         position: "top-center",
       });
-    } else if (trimmedCode === '99DOFF' || trimmedCode === '99SOFF') {
+    } else if (trimmedCode === '99DOFF') {
       setAppliedCoupon(trimmedCode);
       setCouponDiscount(99);
       toast.success("Coupon applied!", {
         description: "You saved 99% on your order!",
         position: "top-center",
       });
-      console.log(`${trimmedCode} coupon applied successfully`); // Debug log
+      console.log('99DOFF coupon applied successfully'); // Debug log
     } else if (trimmedCode === '') {
       toast.error("Please enter a coupon code", {
         position: "top-center",
@@ -456,51 +456,11 @@ const Checkout = () => {
           token,
           amount: parseFloat(calculateTotal()),
           orderDetails: {
-            packageName: `${packageDetails.name} Package`,
-            couponCode: appliedCoupon || undefined,
-            addons: [
-              ...(usbDrives > 0 ? [{
-                name: 'Custom USB Drive',
-                quantity: usbDrives,
-                price: USB_DRIVE_PRICE,
-                description: 'Physical backup for your memories on a custom USB drive.'
-              }] : []),
-              ...(cloudBackup > 0 ? [{
-                name: 'Online Gallery & Backup',
-                quantity: 1,
-                price: 0,
-                description: 'Annual subscription for secure online gallery and cloud backup storage. First year included, renews at $49/year.'
-              }] : []),
-              ...(digitizingSpeed !== 'standard' ? [{
-                name: getSelectedDigitizingOption().name === 'Expedited' ? 'Expedited Processing' : 'Rush Processing',
-                quantity: 1,
-                price: getSelectedDigitizingOption().price,
-                description: getSelectedDigitizingOption().description
-              }] : [])
-            ],
-            customerDetails: {
-              firstName: validatedFormData.firstName,
-              lastName: validatedFormData.lastName,
-              email: validatedFormData.email,
-              phone: validatedFormData.phone,
-              address: {
-                street: validatedFormData.address,
-                city: validatedFormData.city,
-                state: validatedFormData.state,
-                zip: validatedFormData.zipCode,
-                country: 'US'
-              }
-            },
-            customerNotes: '',
-            shippingAddress: {
-              name: `${validatedFormData.firstName} ${validatedFormData.lastName}`,
-              street: validatedFormData.address,
-              city: validatedFormData.city,
-              state: validatedFormData.state,
-              zip: validatedFormData.zipCode,
-              country: 'US'
-            },
-            includeOnlineGallery: cloudBackup > 0
+            package: packageType,
+            usbDrives,
+            cloudBackup,
+            digitizingSpeed,
+            customerInfo: validatedFormData
           }
         }),
       });
