@@ -184,6 +184,22 @@
   box-shadow: 0 0 0 2px rgba(26, 54, 93, 0.2);
 }
 
+/* Email Popup Animation */
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.15s ease-out;
+}
+
 /* Improve mobile responsiveness and touch handling */
 @media (max-width: 640px) {
   .checkout-section {
