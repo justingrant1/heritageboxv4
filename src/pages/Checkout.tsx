@@ -223,14 +223,14 @@ const Checkout = () => {
         description: "You saved 15% on your order!",
         position: "top-center",
       });
-    } else if (trimmedCode === '99DOFF') {
+    } else if (trimmedCode === '99DOFF' || trimmedCode === '99SOFF') {
       setAppliedCoupon(trimmedCode);
       setCouponDiscount(99);
       toast.success("Coupon applied!", {
         description: "You saved 99% on your order!",
         position: "top-center",
       });
-      console.log('99DOFF coupon applied successfully'); // Debug log
+      console.log(`${trimmedCode} coupon applied successfully`); // Debug log
     } else if (trimmedCode === '') {
       toast.error("Please enter a coupon code", {
         position: "top-center",
