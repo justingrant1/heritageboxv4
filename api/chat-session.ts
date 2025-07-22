@@ -21,11 +21,23 @@ interface ChatTranscriptRecord {
 
 // Helper function to call our Airtable operations endpoint
 async function callAirtableAPI(operation: string, params: any) {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:8081';
+  let baseUrl: string;
+  
+  if (process.env.VERCEL_URL) {
+    // Production Vercel deployment
+    baseUrl = `https://${process.env.VERCEL_URL}`;
+  } else if (process.env.NODE_ENV === 'development') {
+    // Local development
+    baseUrl = 'http://localhost:5173'; // Vite dev server
+  } else {
+    // Fallback - try relative API call
+    baseUrl = '';
+  }
     
-  const response = await fetch(`${baseUrl}/api/airtable-operations`, {
+  const apiUrl = baseUrl ? `${baseUrl}/api/airtable-operations` : '/api/airtable-operations';
+  console.log('Calling Airtable API:', apiUrl, { operation });
+  
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -38,11 +50,17 @@ async function callAirtableAPI(operation: string, params: any) {
     }),
   });
 
+  console.log('Airtable API response status:', response.status);
+  
   if (!response.ok) {
-    throw new Error(`Airtable operation failed: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('Airtable API error:', errorText);
+    throw new Error(`Airtable operation failed: ${response.status} - ${errorText}`);
   }
 
   const result = await response.json();
+  console.log('Airtable API result:', result);
+  
   if (!result.success) {
     throw new Error(result.error || 'Airtable operation failed');
   }

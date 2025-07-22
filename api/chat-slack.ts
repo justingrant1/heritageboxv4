@@ -12,6 +12,12 @@ interface SlackMessage {
 }
 
 async function sendSlackMessage(message: SlackMessage): Promise<any> {
+  console.log('Sending Slack message:', { 
+    channel: message.channel, 
+    text: message.text.substring(0, 50) + '...',
+    thread_ts: message.thread_ts 
+  });
+
   const response = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
     headers: {
@@ -27,12 +33,16 @@ async function sendSlackMessage(message: SlackMessage): Promise<any> {
     })
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Slack API error: ${response.status} - ${errorText}`);
+  // Slack API always returns 200, even for errors - check the JSON response
+  const result = await response.json();
+  console.log('Slack API response:', result);
+
+  if (!result.ok) {
+    console.error('Slack API error:', result.error);
+    throw new Error(`Slack API error: ${result.error}`);
   }
 
-  return response.json();
+  return result;
 }
 
 async function createSlackThread(customerMessage: string, sessionId: string): Promise<string> {
@@ -50,10 +60,6 @@ _Reply in this thread to chat with the customer. Messages will be sent back to t
     icon_emoji: ':robot_face:'
   });
 
-  if (!result.ok) {
-    throw new Error(`Failed to create Slack thread: ${result.error}`);
-  }
-
   return result.ts; // Thread timestamp
 }
 
@@ -65,17 +71,13 @@ async function sendMessageToSlack(message: string, threadId: string, fromCustome
     ? `**Customer:** ${message}`
     : `**Agent:** ${message}`;
 
-  const result = await sendSlackMessage({
+  await sendSlackMessage({
     text: slackMessage,
     channel: VIP_SALES_CHANNEL,
     thread_ts: threadId,
     username,
     icon_emoji: icon
   });
-
-  if (!result.ok) {
-    throw new Error(`Failed to send message to Slack: ${result.error}`);
-  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
