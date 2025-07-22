@@ -80,6 +80,54 @@ async function findOrCreateCustomer(customerData: any, squareConfig: any) {
 
 async function createSquareOrder(orderData: any, squareConfig: any) {
     try {
+        // Build order data
+        const orderRequest: any = {
+            order: {
+                location_id: squareConfig.locationId,
+                line_items: orderData.lineItems,
+                fulfillments: [
+                    {
+                        type: 'SHIPMENT',
+                        state: 'PROPOSED',
+                        shipment_details: {
+                            recipient: {
+                                display_name: `${orderData.customer.given_name} ${orderData.customer.family_name}`,
+                                email_address: orderData.customer.email_address,
+                                phone_number: orderData.customer.phone_number,
+                                address: orderData.customer.address
+                            }
+                        }
+                    }
+                ],
+                metadata: {
+                    'package_type': orderData.packageType,
+                    'add_ons': orderData.addOns.join(','),
+                    'customer_id': orderData.customer.id
+                }
+            },
+            idempotency_key: crypto.randomUUID()
+        };
+
+        // Add discount if present
+        if (orderData.discountCode && orderData.discountAmount) {
+            orderRequest.order.discounts = [
+                {
+                    name: `Discount Code: ${orderData.discountCode}`,
+                    percentage: null,
+                    amount_money: {
+                        amount: Math.round(orderData.discountAmount * 100), // Convert to cents
+                        currency: 'USD'
+                    },
+                    scope: 'ORDER'
+                }
+            ];
+            
+            logEvent('discount_applied', { 
+                code: orderData.discountCode, 
+                amount: orderData.discountAmount 
+            });
+        }
+
         const response = await fetch(`${squareConfig.apiUrl}/v2/orders`, {
             method: 'POST',
             headers: {
@@ -87,32 +135,7 @@ async function createSquareOrder(orderData: any, squareConfig: any) {
                 'Authorization': `Bearer ${squareConfig.accessToken}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                order: {
-                    location_id: squareConfig.locationId,
-                    line_items: orderData.lineItems,
-                    fulfillments: [
-                        {
-                            type: 'SHIPMENT',
-                            state: 'PROPOSED',
-                            shipment_details: {
-                                recipient: {
-                                    display_name: `${orderData.customer.given_name} ${orderData.customer.family_name}`,
-                                    email_address: orderData.customer.email_address,
-                                    phone_number: orderData.customer.phone_number,
-                                    address: orderData.customer.address
-                                }
-                            }
-                        }
-                    ],
-                    metadata: {
-                        'package_type': orderData.packageType,
-                        'add_ons': orderData.addOns.join(','),
-                        'customer_id': orderData.customer.id
-                    }
-                },
-                idempotency_key: crypto.randomUUID()
-            })
+            body: JSON.stringify(orderRequest)
         });
 
         const result = await response.json();
@@ -216,7 +239,9 @@ export default async function handler(request: Request) {
             customer,
             lineItems,
             packageType: packageType,
-            addOns: addOns
+            addOns: addOns,
+            discountCode: squareOrderDetails.discountCode,
+            discountAmount: squareOrderDetails.discountAmount
         }, squareConfig);
 
         // Step 4: Create payment linked to customer and order

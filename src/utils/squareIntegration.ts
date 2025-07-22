@@ -83,10 +83,7 @@ export function buildSquareLineItems(orderDetails: OrderDetails) {
   if (mainPackage) {
     lineItems.push({
       quantity: '1',
-      catalog_object_id: mainPackage.id,
-      catalog_version: undefined, // Use latest version
-      variation_name: 'Regular',
-      item_type: 'ITEM_VARIATION',
+      catalog_object_id: mainPackage.variation_id, // Use variation ID for catalog items
       base_price_money: {
         amount: Math.round(mainPackage.price * 100), // Convert to cents
         currency: 'USD'
@@ -100,10 +97,7 @@ export function buildSquareLineItems(orderDetails: OrderDetails) {
     if (addOn) {
       lineItems.push({
         quantity: '1',
-        catalog_object_id: addOn.id,
-        catalog_version: undefined,
-        variation_name: 'Regular',
-        item_type: 'ITEM_VARIATION',
+        catalog_object_id: addOn.variation_id, // Use variation ID for catalog items
         base_price_money: {
           amount: Math.round(addOn.price * 100),
           currency: 'USD'
