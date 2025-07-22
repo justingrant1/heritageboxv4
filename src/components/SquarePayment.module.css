@@ -1,0 +1,157 @@
+/* Square Payment Component */
+.squarePaymentContainer {
+  /* Ensure proper interaction */
+  touch-action: manipulation;
+}
+
+.cardContainer {
+  /* Square iframe container - matches screenshot styling */
+  position: relative;
+  width: 100%;
+  min-height: 80px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.cardContainer:focus-within {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.cardContainer[data-mobile="true"] {
+  min-height: 120px;
+}
+
+/* Ensure the Square iframe works properly */
+.cardContainer iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none;
+  background: transparent;
+}
+
+/* iOS zoom prevention for inputs */
+.cardContainer input,
+.cardContainer input[type="text"],
+.cardContainer input[type="tel"] {
+  font-size: 16px !important;
+  -webkit-appearance: none;
+}
+
+/* Mobile specific styling to help with autocomplete */
+@media (max-width: 768px) {
+  .cardContainer {
+    /* Ensure proper viewport behavior */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    
+    /* Enable hardware acceleration */
+    will-change: transform;
+    
+    /* Improve scrolling performance */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Style for mobile payment button */
+  .mobilePayButton {
+    min-height: 50px;
+    font-size: 16px; /* Prevent zoom on iOS */
+    -webkit-appearance: none;
+    border-radius: 12px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Mobile loading states */
+  .mobileLoadingContainer {
+    padding: 20px;
+    text-align: center;
+  }
+  
+  /* Mobile autocomplete hint styling */
+  .autocompleteHint {
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: rgb(37, 99, 235);
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 769px) {
+  .cardContainer {
+    min-height: 110px;
+  }
+  
+  .desktopSecurityInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #6b7280;
+  }
+}
+
+
+/* Loading state optimizations */
+.loadingSpinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state styling */
+.errorContainer {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+/* Success indicators */
+.successIndicator {
+  color: #059669;
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Responsive adjustments for very small screens */
+@media (max-width: 480px) {
+  .cardContainer {
+    min-height: 130px;
+    padding: 4px;
+  }
+  
+  .mobilePayButton {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .autocompleteHint {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}

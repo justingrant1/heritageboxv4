@@ -1,0 +1,74 @@
+
+# HeritageBox® Robots.txt
+# Main website: https://heritagebox.com
+# Last updated: 2025-05-21
+
+# Global rules for all crawlers
+User-agent: *
+Allow: /
+Disallow: /checkout
+Disallow: /order-confirmation
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /*?*
+
+# Specific rules for major search engines
+# Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Googlebot-Image
+Allow: /lovable-uploads/
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.gif$
+Allow: /*.webp$
+
+# Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+# Yahoo
+User-agent: Slurp
+Allow: /
+Crawl-delay: 3
+
+# Yandex
+User-agent: Yandexbot
+Allow: /
+Crawl-delay: 3
+
+# DuckDuckGo
+User-agent: DuckDuckBot
+Allow: /
+
+# Social media crawlers
+User-agent: Twitterbot
+Allow: /
+Allow: /lovable-uploads/
+
+User-agent: facebookexternalhit
+Allow: /
+Allow: /lovable-uploads/
+
+# Block AI training crawlers
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+# XML Sitemap location
+Sitemap: https://heritagebox.com/sitemap.xml

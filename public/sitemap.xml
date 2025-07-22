@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <!-- Homepage -->
+  <url>
+    <loc>https://heritagebox.com/</loc>
+    <lastmod>2025-05-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://heritagebox.com/lovable-uploads/dff425b2-3ade-48c8-acd8-e56366b3516d.png</image:loc>
+      <image:title>HeritageBox Logo</image:title>
+      <image:caption>Professional Memory Digitization Services</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://heritagebox.com/lovable-uploads/ad279416-58a2-4b0d-8d54-d7ef25d60e52.png</image:loc>
+      <image:title>Family watching old memories on TV</image:title>
+      <image:caption>Family watching digitized memories</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Package Selection -->
+  <url>
+    <loc>https://heritagebox.com/package-selected</loc>
+    <lastmod>2025-05-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- About Us -->
+  <url>
+    <loc>https://heritagebox.com/about-us</loc>
+    <lastmod>2025-05-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://heritagebox.com/lovable-uploads/f089a63b-496c-42fc-97d1-fd43f38c9525.png</image:loc>
+      <image:title>Digitizing process</image:title>
+      <image:caption>Our professional digitization process</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Contact -->
+  <url>
+    <loc>https://heritagebox.com/contact</loc>
+    <lastmod>2025-05-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Legal Pages -->
+  <url>
+    <loc>https://heritagebox.com/privacy-policy</loc>
+    <lastmod>2025-05-21</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://heritagebox.com/terms-of-service</loc>
+    <lastmod>2025-05-21</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <!-- Not Found Page -->
+  <url>
+    <loc>https://heritagebox.com/404</loc>
+    <lastmod>2025-05-21</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+  </url>
+</urlset>

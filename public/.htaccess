@@ -1,0 +1,29 @@
+
+# Enable rewriting and necessary modules
+RewriteEngine On
+Options +FollowSymLinks
+AddType application/xml .xml
+
+# Force XML content type for all XML files
+<FilesMatch "\.xml$">
+    ForceType application/xml
+    Header set Content-Type "application/xml; charset=utf-8"
+</FilesMatch>
+
+# Specific rule for sitemap.xml with stronger content type enforcement
+<Files "sitemap.xml">
+    ForceType application/xml
+    Header set Content-Type "application/xml; charset=utf-8"
+    Header set X-Content-Type-Options "nosniff"
+</Files>
+
+# Handle existing static files (images, css, js, etc.)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Handle favicon.ico
+RewriteRule ^favicon\.ico$ - [L]
+
+# For all other requests (SPA routes), serve index.html
+RewriteRule ^ index.html [L]
