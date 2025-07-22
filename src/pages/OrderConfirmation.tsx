@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { sendOrderConfirmationToBrevo } from '@/utils/brevoUtils';
 import { getDigitizingOptionById } from '@/lib/utils';
 import { toast } from 'sonner';
+import { generateSequentialOrderNumber } from '@/utils/orderUtils';
 
 // Declare gtag function for TypeScript
 declare global {
@@ -14,16 +15,6 @@ declare global {
     gtag: (...args: any[]) => void;
   }
 }
-
-// Function to generate sequential order number as fallback
-const generateOrderNumber = () => {
-  const baseNumber = 13405;
-  const storedCount = localStorage.getItem('hb_order_count');
-  const currentCount = storedCount ? parseInt(storedCount) : 0;
-  const newCount = currentCount + 1;
-  localStorage.setItem('hb_order_count', newCount.toString());
-  return `HB${(baseNumber + newCount - 1).toString().padStart(5, '0')}`;
-};
 
 const OrderConfirmation = () => {
   const [searchParams] = useSearchParams();
@@ -49,7 +40,7 @@ const OrderConfirmation = () => {
       console.log('✅ ORDER CONFIRMATION - Using passed order number:', passedOrderNumber);
       return passedOrderNumber;
     } else {
-      const fallbackOrder = generateOrderNumber();
+      const fallbackOrder = generateSequentialOrderNumber();
       console.log('⚠️ ORDER CONFIRMATION - No order number passed, generating fallback:', fallbackOrder);
       return fallbackOrder;
     }
