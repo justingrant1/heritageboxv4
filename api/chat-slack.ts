@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
-const VIP_SALES_CHANNEL = '#vip-sales';
+const VIP_SALES_CHANNEL = process.env.SLACK_VIP_SALES_CHANNEL || 'C02CPNGTL5Q';
 
 interface SlackMessage {
   text: string;

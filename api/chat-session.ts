@@ -21,7 +21,11 @@ interface ChatTranscriptRecord {
 
 // Helper function to call our Airtable operations endpoint
 async function callAirtableAPI(operation: string, params: any) {
-  const response = await fetch(`${process.env.VERCEL_URL || 'http://localhost:8080'}/api/airtable-operations`, {
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:5173';
+    
+  const response = await fetch(`${baseUrl}/api/airtable-operations`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

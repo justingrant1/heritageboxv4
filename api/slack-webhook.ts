@@ -47,30 +47,6 @@ function verifySlackSignature(body: string, signature: string, timestamp: string
   return signature === mySignature;
 }
 
-// Get channel ID for #vip-sales
-async function getChannelId(channelName: string): Promise<string | null> {
-  try {
-    const response = await fetch('https://slack.com/api/conversations.list', {
-      headers: {
-        'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
-        'Content-Type': 'application/json',
-      }
-    });
-
-    const data = await response.json();
-    
-    if (data.ok) {
-      const channel = data.channels?.find((ch: any) => ch.name === channelName);
-      return channel?.id || null;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error getting channel ID:', error);
-    return null;
-  }
-}
-
 // Process incoming Slack message and send to chat widget
 async function processSlackMessage(event: SlackEvent): Promise<void> {
   // Ignore bot messages and messages without text
@@ -78,8 +54,8 @@ async function processSlackMessage(event: SlackEvent): Promise<void> {
     return;
   }
 
-  // Get the #vip-sales channel ID
-  const vipSalesChannelId = await getChannelId('vip-sales');
+  // Get the #vip-sales channel ID from environment
+  const vipSalesChannelId = process.env.SLACK_VIP_SALES_CHANNEL;
   
   // Only process messages from #vip-sales channel
   if (!vipSalesChannelId || event.channel !== vipSalesChannelId) {
